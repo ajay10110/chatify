@@ -10,7 +10,9 @@ export const arcjetProtection = async (req, res, next) => {
                 return res.status(429).json({message: "Rate limimted exceeded. Please try again later"});
             }
             else if(decision.reason.isBot()){
-                return res.status(403).json({message: "Bot access denied"});
+                return res.status(403).json({
+                    message: "BOT_BLOCKED_BY_MY_MIDDLEWARE"
+                });
             } else{
                 return res.status(403).json({message: "Acess denied by security policy"});
             }
