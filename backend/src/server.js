@@ -13,38 +13,54 @@ import { app, server } from "./lib/socket.js";
 const __dirname = path.resolve();
 const PORT = ENV.PORT || 3000;
 
+// Middleware
 app.use(express.json({ limit: "5mb" }));
+app.use(cookieParser());
+
 app.use(
   cors({
     origin: ENV.CLIENT_URL,
     credentials: true,
   })
 );
-app.use(cookieParser());
 
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-if (ENV.NODE_ENV === "production") {
-  const distPath1 = path.join(__dirname, "../frontend/dist");
-  const distPath2 = path.join(__dirname, "frontend/dist");
+// ===============================
+// Serve Frontend (Production)
+// ===============================
+const distPath1 = path.join(__dirname, "../frontend/dist");
+const distPath2 = path.join(__dirname, "frontend/dist");
 
-  console.log("Current directory:", __dirname);
-  console.log("Checking:", distPath1, fs.existsSync(distPath1));
-  console.log("Checking:", distPath2, fs.existsSync(distPath2));
+console.log("NODE_ENV:", ENV.NODE_ENV);
+console.log("Current Directory:", __dirname);
+console.log("Checking Path 1:", distPath1, fs.existsSync(distPath1));
+console.log("Checking Path 2:", distPath2, fs.existsSync(distPath2));
 
-  const distPath = fs.existsSync(distPath1) ? distPath1 : distPath2;
+const distPath = fs.existsSync(distPath1) ? distPath1 : distPath2;
 
-  console.log("Using:", distPath);
+if (fs.existsSync(distPath)) {
+  console.log("Serving frontend from:", distPath);
 
   app.use(express.static(distPath));
 
   app.get("*", (req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
+} else {
+  console.log("Frontend build (dist) not found!");
 }
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  connectDB();
+// ===============================
+// Start Server
+// ===============================
+server.listen(PORT, async () => {
+  try {
+    await connectDB();
+    console.log(`✅ Server running on port ${PORT}`);
+  } catch (error) {
+    console.error("Database connection failed:", error);
+  }
 });
