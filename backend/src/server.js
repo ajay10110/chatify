@@ -1,7 +1,8 @@
 import express from "express";
 import cookieParser from "cookie-parser";
-import path from "path";
 import cors from "cors";
+import path from "path";
+import fs from "fs";
 
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
@@ -13,23 +14,41 @@ const __dirname = path.resolve();
 
 const PORT = ENV.PORT || 3000;
 
-app.use(express.json({ limit: "5mb" })); // req.body
-app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }));
+// Middleware
+app.use(express.json({ limit: "5mb" }));
 app.use(cookieParser());
+app.use(
+  cors({
+    origin: ENV.CLIENT_URL,
+    credentials: true,
+  })
+);
 
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-// make ready for deployment
+// ======================
+// Production
+// ======================
 if (ENV.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  const distPath = path.join(__dirname, "frontend", "dist");
 
-  app.get("*", (_, res) => {
-    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+  console.log("Current directory:", __dirname);
+  console.log("Frontend dist path:", distPath);
+  console.log("Dist exists:", fs.existsSync(distPath));
+
+  app.use(express.static(distPath));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
   });
 }
 
+// ======================
+// Start Server
+// ======================
 server.listen(PORT, () => {
-  console.log("Server running on port: " + PORT);
+  console.log(`Server running on port ${PORT}`);
   connectDB();
 });
